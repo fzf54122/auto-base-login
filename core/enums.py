@@ -35,6 +35,13 @@ class StrategyModeType(object):
 
 class LoginStrategyType(StrategyModeType):
     BAIJIAHAO = "baijiahao"
+    TOUTIAO = "toutiao"
+    NETEASE = "netease"
+    SOHU = "sohu"
+    DAYU = "dayu"
+    PENGUIN = "penguin"
+    YIDIAN = "yidian"
+
 
 
 if __name__ == '__main__':

@@ -29,9 +29,40 @@ def _env_bool(key: str, default: bool) -> bool:
 
 class URLConfig:
     # 平台 URL / 关键文案
+    # 百家号
     BAIJIAHAO_LOGIN_URL: str = "https://baijiahao.baidu.com/builder/theme/bjh/login"
     BAIJIAHAO_HOME_URL: str = "https://baijiahao.baidu.com/builder/rc/home"
     BAIJIAHAO_NEED_LOGIN_TEXT: str = "注册/登录百家号"
+
+    # 头条号
+    TOUTIAO_LOGIN_URL: str = "https://sso.toutiao.com/login/"
+    TOUTIAO_HOME_URL: str = "https://mp.toutiao.com/profile_v4/index"
+    TOUTIAO_NEED_LOGIN_TEXT: str = "登录"
+
+    # 网易号
+    NETEASE_LOGIN_URL: str = "https://mp.163.com/login.html"
+    NETEASE_HOME_URL: str = "https://mp.163.com/writer#/"
+    NETEASE_NEED_LOGIN_TEXT: str = "登录"
+
+    # 搜狐号
+    SOHU_LOGIN_URL: str = "https://mp.sohu.com/mpfe/v3/login"
+    SOHU_HOME_URL: str = "https://mp.sohu.com/main.html"
+    SOHU_NEED_LOGIN_TEXT: str = "登录"
+
+    # 大鱼号
+    DAYU_LOGIN_URL: str = "https://mp.dayu.com/account/login"
+    DAYU_HOME_URL: str = "https://mp.dayu.com/dashboard"
+    DAYU_NEED_LOGIN_TEXT: str = "登录"
+
+    # 企鹅号
+    PENGUIN_LOGIN_URL: str = "https://om.qq.com/user/auth/login"
+    PENGUIN_HOME_URL: str = "https://om.qq.com/user/home"
+    PENGUIN_NEED_LOGIN_TEXT: str = "登录"
+
+    # 一点号
+    YIDIAN_LOGIN_URL: str = "https://mp.yidianzixun.com/login"
+    YIDIAN_HOME_URL: str = "https://mp.yidianzixun.com/dashboard"
+    YIDIAN_NEED_LOGIN_TEXT: str = "登录"
 
 
 @dataclass(slots=True)
@@ -61,6 +92,4 @@ class Config(URLConfig):
     PW_BROWSER_ARGS: List[str] = field(
         default_factory=lambda: _env("PW_BROWSER_ARGS", "--lang=en-GB").split())
 
-
 settings = Config()
-

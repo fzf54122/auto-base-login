@@ -15,7 +15,30 @@ from ...enums import LoginStrategyType, LoginReasonType
 from ...schemas import LoginOptions, LoginResponse
 
 
-class BasePlaywrightStrategy:
+class AuthCheckMinIx:
+    """
+    认证检查Mixin，提供统一的优化认证检查方法
+    """
+
+    async def _optimized_auth_check(self, page: Page, account_file: str, options: LoginOptions, url: str,
+                                    need_login_text: str) -> LoginResponse:
+        """统一的优化认证检查方法，所有策略在auth时都使用此方法提高性能"""
+        # 激进优化：完全不等待页面加载，尽快检查登录状态
+        await self.safe_goto(page, url, options, wait_until="none")
+
+        # 激进优化：立即检查登录状态，不等待页面渲染完成
+        try:
+            # 尝试快速检查登录状态元素，仅等待500ms
+            need_login = await page.get_by_text(need_login_text).count(timeout=500)
+            return LoginResponse(not need_login,
+                                 LoginReasonType.COOKIE_VALID if not need_login else LoginReasonType.COOKIE_INVALID,
+                                 path=account_file)
+        except Exception:
+            # 检查失败直接返回无效，避免额外等待
+            return LoginResponse(False, LoginReasonType.COOKIE_INVALID, path=account_file)
+
+
+class BasePlaywrightStrategy(AuthCheckMinIx):
     """
     给策略继承：
     - 统一 launch / context / page
@@ -104,10 +127,18 @@ class BasePlaywrightStrategy:
 
     async def execute(self, account_file: str, options: LoginOptions, mode: LoginStrategyType | str) -> LoginResponse:
         last_exc: Exception | None = None
-        headless = True if mode == LoginStrategyType.AUTH else False
+        if mode == LoginStrategyType.AUTH:
+            headless = True
+            # 激进优化：禁用几乎所有非必要功能，最大化性能
+            optimized_browser_args = options.auth_on_goto
+        else:
+            headless = False
+            optimized_browser_args = options.browser_args
 
         async with async_playwright() as p:
-            for attempt in range(options.retries):
+            # 优化：减少重试次数，认证模式只尝试1次
+            retries = 1 if mode == LoginStrategyType.AUTH else options.retries
+            for attempt in range(retries):
                 browser: Browser | None = None
                 context: BrowserContext | None = None
                 page: Page | None = None
@@ -116,20 +147,30 @@ class BasePlaywrightStrategy:
                 try:
                     browser = await p.chromium.launch(
                         headless=headless,
-                        args=options.browser_args,
+                        args=optimized_browser_args,
                         executable_path=options.executable_path,
                         channel=options.channel,
+                        slow_mo=0,  # 禁用慢动作
+                        timeout=3000,  # 更短的浏览器启动超时
                     )
                     if mode == LoginStrategyType.AUTH:
-                        context = await browser.new_context(storage_state=account_file)
+                        context = await browser.new_context(
+                            storage_state=account_file,
+                            accept_downloads=False,
+                            java_script_enabled=False,  # 禁用JavaScript，仅用于cookie验证
+                        )
                     elif mode == LoginStrategyType.LOGIN:
                         context = await browser.new_context()
 
-                    context.set_default_navigation_timeout(options.nav_timeout_ms)
-                    context.set_default_timeout(options.nav_timeout_ms)
+                    # 激进优化：更短的超时时间
+                    nav_timeout = 3000 if mode == LoginStrategyType.AUTH else options.nav_timeout_ms
+                    context.set_default_navigation_timeout(nav_timeout)
+                    context.set_default_timeout(nav_timeout)
                     context = await self.set_init_script(context)
 
-                    await self._trace_start(context, options)
+                    # 优化：认证模式下禁用trace和截图以提高性能
+                    if mode != LoginStrategyType.AUTH:
+                        await self._trace_start(context, options)
 
                     page = await context.new_page()
                     return await self.run(page, account_file, options, mode)

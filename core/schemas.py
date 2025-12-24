@@ -58,6 +58,47 @@ class LoginOptions(DataMixin):
             retry_backoff_ms=settings.PW_RETRY_BACKOFF_MS,
         )
 
+    @property
+    def auth_on_goto(self) -> list[str]:
+        return [
+            '--disable-extensions',
+            '--disable-gpu',
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-browser-side-navigation',
+            '--disable-images',
+            '--disable-plugins',
+            '--disable-background-networking',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-breakpad',
+            '--disable-component-update',
+            '--disable-crash-reporter',
+            '--disable-default-apps',
+            '--disable-features=TranslateUI,BlinkGenPropertyTrees,site-per-process,NetworkService,NetworkServiceInProcess',
+            '--disable-hang-monitor',
+            '--disable-ipc-flooding-protection',
+            '--disable-notifications',
+            '--disable-offer-store-unmasked-wallet-cards',
+            '--disable-popup-blocking',
+            '--disable-print-preview',
+            '--disable-prompt-on-repost',
+            '--disable-renderer-backgrounding',
+            '--disable-setuid-sandbox',
+            '--disable-sync',
+            '--disable-translate',
+            '--disable-web-security',
+            '--metrics-recording-only',
+            '--mute-audio',
+            '--no-first-run',
+            '--safebrowsing-disable-auto-update',
+            '--single-process',
+            '--proxy-server="direct://"',
+            '--proxy-bypass-list=*',
+            '--log-level=3',
+            '--disable-logging',
+        ]
+
 
 @dataclass(slots=True)
 class LoginResponse(DataMixin):
