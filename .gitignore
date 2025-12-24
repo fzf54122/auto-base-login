@@ -108,3 +108,5 @@ conf/prod_env.py
 
 celerybeat-schedule.*
 test/
+data/
+artifacts/
