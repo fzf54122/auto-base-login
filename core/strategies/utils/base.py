@@ -6,8 +6,10 @@
 # mcplogin/base.py
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from .types import LoginOptions, LoginResponse
-from .enums import LoginReasonType
+from ...schemas import LoginOptions, LoginResponse
+from ...enums import LoginReasonType
+import os
+
 
 class LoginStrategy(ABC):
     """每个平台实现：生成cookie、校验cookie。"""
@@ -26,7 +28,6 @@ class LoginStrategy(ABC):
 
     async def setup(self, account_file: str, options: LoginOptions, handle: bool = False) -> LoginResponse:
         """不存在/失效则（可选）触发登录生成。"""
-        import os
 
         if not os.path.exists(account_file):
             if not handle:

@@ -9,12 +9,12 @@ from dataclasses import dataclass
 from typing import Any, Dict
 from rich.logging import RichHandler
 
-from config import settings
+from ..config import settings
 
 default_level = settings.LOGGER_LEVEL
 
 
-def get_logger(name, level=default_level):
+def get_logger(name=None, level=default_level):
     return _get_rich_logger(name, level)
 
 
@@ -47,7 +47,8 @@ class LogCtx:
     platform: str
     account_file: str
 
-    def as_dict(self) -> Dict[str, Any]:
+    @property
+    def data(self) -> Dict[str, Any]:
         return {"platform": self.platform, "account_file": self.account_file}
 
 
@@ -60,4 +61,4 @@ def log_kv(logger: logging.Logger, level: int, msg: str, **kv: Any) -> None:
 if __name__ == "__main__":
     logger = get_logger()
     ctx = LogCtx(platform="baijiahao", account_file="/tmp/bjh.json")
-    log_kv(logger, logging.INFO, "cookie auth start", **ctx.as_dict())
+    log_kv(logger, logging.INFO, "cookie auth start", **ctx.data)

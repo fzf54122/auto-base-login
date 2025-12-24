@@ -3,7 +3,6 @@
 # @Author  : fzf
 # @FileName: emums.py
 # @Software: PyCharm
-
 from enum import StrEnum
 
 

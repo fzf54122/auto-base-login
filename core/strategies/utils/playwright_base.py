@@ -9,7 +9,7 @@ import os
 from typing import Any, Callable, Coroutine, TypeVar
 
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page, TimeoutError as PWTimeout
-from core.types import LoginOptions
+from ...schemas import LoginOptions
 
 T = TypeVar("T")
 

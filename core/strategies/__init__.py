@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Dict
 from ..enums import LoginStrategyType
 from .BaijiahaoLogin import BaijiahaoLogin
-from ..base import LoginStrategy
+from .utils.base import LoginStrategy
 
 
 class LoginStrategyFactory:
