@@ -22,9 +22,9 @@ class DataMixin:
 @dataclass(slots=True)
 class LoginOptions(DataMixin):
     headless: bool = False
-    timeout_ms: int = 180_000  # 登录等待总超时
+    timeout_ms: int = 300_000  # 登录等待总超时
     nav_timeout_ms: int = 30_000  # 单次 goto 超时
-    auth_wait_ms: int = 5_000
+    auth_wait_ms: int = 150_000
 
     browser_args: list[str] = field(default_factory=lambda: ["--lang=en-GB"])
 
@@ -65,6 +65,7 @@ class LoginResponse(DataMixin):
     reason: str | None = None
     path: str | None = None
     extra: Dict[str, Any] = field(default_factory=dict)
+    data: Dict[str, Any] = field(default_factory=dict)
 
 
 if __name__ == "__main__":

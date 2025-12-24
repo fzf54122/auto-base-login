@@ -5,80 +5,39 @@
 # @Software: PyCharm
 from __future__ import annotations
 import os
-import time
+from playwright.async_api import Page
 
 from .utils.base import LoginStrategy
-from .utils.playwright_base import BasePlaywrightStrategy
 from ..schemas import LoginOptions, LoginResponse
-from ..enums import (LoginReasonType, LoginStrategyType)
-
-from ..utils.logger import (get_logger,LogCtx)
+from ..enums import LoginReasonType, LoginStrategyType
+from ..utils.logger import get_logger, LogCtx
 from ..config import settings
 
 logger = get_logger(LoginStrategyType.BAIJIAHAO)
 
 
-class BaijiahaoLogin(LoginStrategy,
-                     BasePlaywrightStrategy):
+class BaijiahaoLogin(LoginStrategy):
     name = LoginStrategyType.BAIJIAHAO
 
-    async def login_and_save(self, account_file: str, options: LoginOptions) -> LoginResponse:
+    async def handler_auth_cookie(self, page: Page, account_file: str, options: LoginOptions) -> LoginResponse:
+        await self.safe_goto(page, settings.BAIJIAHAO_HOME_URL, options)
+        await page.wait_for_load_state("networkidle", timeout=options.nav_timeout_ms)
+        need_login = await page.get_by_text(settings.BAIJIAHAO_NEED_LOGIN_TEXT).count()
+        if need_login:
+            return LoginResponse(False, LoginReasonType.COOKIE_INVALID, path=account_file)
+        return LoginResponse(True, LoginReasonType.COOKIE_VALID, path=account_file)
+
+    async def handler_login_and_save(self, page: Page, account_file: str, options: LoginOptions) -> LoginResponse:
         os.makedirs(os.path.dirname(account_file) or ".", exist_ok=True)
-        ctx = LogCtx(self.name, account_file)
-
-        async def _action(context):
-            logger.info(f'login start, {ctx.data}, headless={options.headless}')
-            login_page = await context.new_page()
-            await self.safe_goto(login_page, settings.BAIJIAHAO_LOGIN_URL, options)
-            await login_page.wait_for_timeout(options.auth_wait_ms)
-
-            probe = await context.new_page()
-
-            start = time.monotonic()
-
-            while True:
-                if (time.monotonic() - start) * 1000 > options.timeout_ms:
-                    await self._capture_on_error(login_page, options, "bjh_login_timeout")
-                    return LoginResponse(False, LoginReasonType.LOGIN_TIMEOUT, path=account_file)
-
-                try:
-                    await self.safe_goto(probe, settings.BAIJIAHAO_HOME_URL, options)
-                    await probe.wait_for_timeout(1500)
-
-                    need_login = await probe.get_by_text(settings.BAIJIAHAO_NEED_LOGIN_TEXT).count()
-                    if need_login == 0:
-                        # await context.storage_state(path=account_file)
-                        logger.info(f'cookie saved, {ctx.data}')
-                        return LoginResponse(True, LoginReasonType.COOKIE_SAVED, path=account_file)
-                except Exception as e:
-                    # 页面偶发异常继续轮询
-                    await probe.wait_for_timeout(1500)
-
+        # 打开登录页
+        await self.safe_goto(page, settings.BAIJIAHAO_LOGIN_URL, options)
         try:
-            return await self.run_with_retry(options, "bjh_login_and_save", _action)
+            # ✅ 等到登录成功自动跳到 home（最多等 timeout_ms）
+            await page.wait_for_url(settings.BAIJIAHAO_HOME_URL, timeout=options.timeout_ms)
+            # 保存 cookie
+            # await page.context.storage_state(path=account_file)
+            state = await page.context.storage_state()
+            return LoginResponse(True, LoginReasonType.COOKIE_SAVED, path=account_file, data=state)
+
         except Exception as e:
-            logger.error(f"login failed, {ctx.data}, err={str(e)}")
-            return LoginResponse(False, LoginReasonType.UNKNOWN_ERROR, path=account_file,
-                                 extra={"err": str(e)})
-
-    async def auth(self, account_file: str, options: LoginOptions) -> LoginResponse:
-        ctx = LogCtx(self.name, account_file)
-        if not os.path.exists(account_file):
-            return LoginResponse(False, LoginReasonType.COOKIE_FILE_MISSING, path=account_file)
-
-        async def _action(context):
-            page = await context.new_page()
-            await self.safe_goto(page, settings.BAIJIAHAO_HOME_URL, options)
-            await page.wait_for_timeout(options.auth_wait_ms)
-
-            need_login = await page.get_by_text(settings.BAIJIAHAO_NEED_LOGIN_TEXT).count()
-            if need_login:
-                return LoginResponse(False, LoginReasonType.COOKIE_INVALID, path=account_file)
-            return LoginResponse(True, LoginReasonType.COOKIE_VALID, path=account_file)
-
-        try:
-            return await self.run_with_retry(options, "bjh_auth", _action)
-        except Exception as e:
-            logger.error(f'auth failed, {ctx.data}, err={str(e)}')
-            return LoginResponse(False, LoginReasonType.PLAYWRIGHT_ERROR, path=account_file,
-                                 extra={"err": str(e)})
+            return LoginResponse(False, LoginReasonType.LOGIN_TIMEOUT, path=account_file, extra={"err": str(e)})

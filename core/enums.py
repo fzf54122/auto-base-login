@@ -28,5 +28,14 @@ class LoginReasonType(StrEnum):
     UNKNOWN_ERROR = "unknown_error"
 
 
-class LoginStrategyType(StrEnum):
+class StrategyModeType(object):
+    AUTH = "auth"
+    LOGIN = "login_and_save"
+
+
+class LoginStrategyType(StrategyModeType):
     BAIJIAHAO = "baijiahao"
+
+
+if __name__ == '__main__':
+    print(LoginStrategyType.AUTH)

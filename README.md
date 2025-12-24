@@ -19,6 +19,10 @@
 Auto Back Login 是一个专为自动化登录场景设计的服务框架，采用策略模式实现多平台登录支持，使用 Playwright 进行浏览器自动化操作，提供简洁优雅的 API 接口。
 
 <div align="center">
+  <img src="https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1332&q=80" alt="自动化服务架构" width="600" style="border-radius: 8px; margin-bottom: 20px;">
+</div>
+
+<div align="center">
 
 | 🎯 **策略模式** | ⚡ **自动登录** | 🛡️ **类型安全** | 📦 **多平台支持** |
 |:---:|:---:|:---:|:---:|
@@ -34,11 +38,17 @@ Auto Back Login 是一个专为自动化登录场景设计的服务框架，采�
 - **易于扩展** - 可快速添加新平台支持
 
 ### 🚀 自动化登录流程
+
 - **自动检测登录状态** - 智能判断是否需要登录
 - **浏览器自动化** - 使用Playwright处理复杂登录流程
 - **Cookie管理** - 自动保存和验证登录状态
 
 ### 📦 优雅的API设计
+
+<div align="center">
+  <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1740&q=80" alt="API设计" width="500" style="border-radius: 8px; margin-bottom: 20px;">
+</div>
+
 - **LoginService** - 统一的服务入口
 - **异步支持** - 基于async/await的异步API
 - **类型安全** - 完整的Python类型注解
@@ -65,18 +75,23 @@ Auto Back Login 是一个专为自动化登录场景设计的服务框架，采�
 auto-back-login/
 ├── __init__.py                 # 包初始化
 ├── main.py                     # 示例入口
-├── config.py                   # 配置文件
 ├── core/                       # 核心模块
 │   ├── __init__.py            # 核心模块初始化
-│   ├── base.py                # 基础类定义
+│   ├── config.py              # 配置文件
 │   ├── enums.py               # 枚举定义
-│   ├── logger.py              # 日志系统
-│   ├── playwright_base.py     # Playwright基础策略
+│   ├── schemas.py             # 类型定义
 │   ├── service.py             # 登录服务
 │   ├── strategies/            # 登录策略
 │   │   ├── __init__.py        # 策略模块初始化
-│   │   └── BaijiahaoLogin.py  # 百家号登录策略
-│   └── types.py               # 类型定义
+│   │   ├── BaijiahaoLogin.py  # 百家号登录策略
+│   │   └── utils/             # 策略工具
+│   │       ├── base.py        # 基础策略类
+│   │       └── playwright_base.py  # Playwright基础策略
+│   └── utils/                 # 通用工具
+│       └── logger.py          # 日志系统
+├── data/                      # 数据目录
+│   └── fzf/                   # 用户数据示例
+├── artifacts/                 # 排障文件目录
 └── README.md                  # 项目文档
 ```
 
@@ -105,15 +120,7 @@ playwright install
 
 #### 1. 配置文件
 
-```python
-# config.py
-class Config(object):
-    BAIJIAHAO_LOGIN_URL = "https://baijiahao.baidu.com/builder/theme/bjh/login"
-    BAIJIAHAO_HOME_URL = "https://baijiahao.baidu.com/builder/rc/home"
-    LOGGER_LEVEL = 'INFO'
-
-settings = Config()
-```
+配置现已集成到`core/config.py`中，可根据需要进行修改。
 
 #### 2. 登录示例
 
@@ -121,7 +128,7 @@ settings = Config()
 # main.py
 import asyncio
 from core.service import LoginService
-from core.types import LoginOptions
+from core.schemas import LoginOptions
 
 async def main():
     # 配置登录选项
@@ -182,7 +189,7 @@ async def setup(platform: str, account_file: str, *, handle: bool = False, optio
         platform: 平台名称（如 "baijiahao"）
         account_file: Cookie保存路径
         handle: 是否自动处理登录
-        options: 登录选项
+        options: 登录选项（可选，默认使用LoginOptions.default）
         
     Returns:
         LoginResponse: 登录结果响应
@@ -199,7 +206,7 @@ async def auth(platform: str, account_file: str, *, options: LoginOptions | None
     Args:
         platform: 平台名称
         account_file: Cookie文件路径
-        options: 登录选项
+        options: 登录选项（可选，默认使用LoginOptions.default）
         
     Returns:
         LoginResponse: 验证结果响应
@@ -216,7 +223,7 @@ async def login_and_save(platform: str, account_file: str, *, options: LoginOpti
     Args:
         platform: 平台名称
         account_file: Cookie保存路径
-        options: 登录选项
+        options: 登录选项（可选，默认使用LoginOptions.default）
         
     Returns:
         LoginResponse: 登录结果响应
@@ -228,9 +235,9 @@ async def login_and_save(platform: str, account_file: str, *, options: LoginOpti
 | 属性 | 类型 | 描述 | 默认值 |
 |------|------|------|--------|
 | `headless` | bool | 是否使用无头浏览器 | False |
-| `timeout_ms` | int | 登录总超时时间（毫秒） | 180000 |
+| `timeout_ms` | int | 登录总超时时间（毫秒） | 300000 |
 | `nav_timeout_ms` | int | 单次导航超时（毫秒） | 30000 |
-| `auth_wait_ms` | int | 验证等待时间（毫秒） | 5000 |
+| `auth_wait_ms` | int | 验证等待时间（毫秒） | 150000 |
 | `browser_args` | list[str] | 浏览器启动参数 | ["--lang=en-GB"] |
 | `executable_path` | str | 自定义浏览器路径 | None |
 | `channel` | str | 浏览器渠道 | None |
@@ -239,6 +246,8 @@ async def login_and_save(platform: str, account_file: str, *, options: LoginOpti
 | `enable_screenshot_on_error` | bool | 错误时是否截图 | True |
 | `retries` | int | 重试次数 | 2 |
 | `retry_backoff_ms` | int | 重试间隔（毫秒） | 800 |
+| `default` | property | 返回默认配置 | - |
+| `data` | property | 返回字典形式的数据 | - |
 
 ### LoginResponse
 
@@ -255,7 +264,7 @@ async def login_and_save(platform: str, account_file: str, *, options: LoginOpti
 ### 自定义LoginOptions
 
 ```python
-from core.types import LoginOptions
+from core.schemas import LoginOptions
 
 # 创建自定义登录选项
 opts = LoginOptions(
@@ -271,19 +280,21 @@ opts = LoginOptions(
 
 ```python
 # 1. 创建新的登录策略类
-from core.base import LoginStrategy
-from core.playwright_base import BasePlaywrightStrategy
-from core.types import LoginOptions, LoginResponse
+from playwright.async_api import Page
+from core.strategies.utils.base import LoginStrategy
+from core.strategies.utils.playwright_base import BasePlaywrightStrategy
+from core.schemas import LoginOptions, LoginResponse
 from core.enums import LoginReasonType
+from core.service import LoginService
 
 class NewPlatformLogin(LoginStrategy, BasePlaywrightStrategy):
     name = "new_platform"
     
-    async def login_and_save(self, account_file: str, options: LoginOptions) -> LoginResponse:
+    async def handler_auth_cookie(self, page: Page, account_file: str, options: LoginOptions) -> LoginResponse:
         # 实现登录逻辑
         pass
     
-    async def auth(self, account_file: str, options: LoginOptions) -> LoginResponse:
+    async def handler_login_and_save(self, page: Page, account_file: str, options: LoginOptions) -> LoginResponse:
         # 实现验证逻辑
         pass
 

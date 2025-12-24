@@ -11,8 +11,8 @@ async def main():
     opts = LoginOptions(headless=False, timeout_ms=180_000)
     res = await LoginService.setup(
         "baijiahao",
-        account_file="bjh.son",
-        handle=True,
+        account_file="./data/fzf/bjh.son",
+        handle=False,  # 不处理登录
         options=opts,
     )
     print(res)
